@@ -1,1 +1,1 @@
-Implement Staking contract on Solidity with integration tests with hardhat
+Implement Staking contract on Solidity with integration tests (hardhat)
