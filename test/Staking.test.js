@@ -42,13 +42,11 @@ describe("Staking", function () {
         it("Should change withdraw amount and rewards", async function () {
             await token.myTokenStake(1000000);
             await network.provider.send("evm_increaseTime", [day]);
-            await token.myTokenStake(1000000);
-            await network.provider.send("evm_increaseTime", [day]);
             await token.claimAndWithdraw(100000);
             let StakeSummary = await token.getStakeSummary();
 
             await expect(StakeSummary[2]).to.equal(100000);
-            await expect(StakeSummary[3]).to.equal(821);
+            await expect(StakeSummary[3]).to.equal(410);
         });
 
         it("Should give 16% rewards instead of 15% rewards", async function () {
