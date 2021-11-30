@@ -1,17 +1,14 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import './Owner.sol';
-import './Staking.sol';
-
-contract ERC20 is Owner, Staking{
+contract ERC20Token {
 
     string private _name;
     string private _symbol;
 
     uint256 private _totalSupply;
 
-    mapping(address => uint256) private balances;
+    mapping(address => uint256) internal balances;
     mapping(address => mapping(address => uint256)) private allowances;
 
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
@@ -29,6 +26,10 @@ contract ERC20 is Owner, Staking{
 
     function symbol() public view returns (string memory) {
         return _symbol;
+    }
+
+    function decimals() public view virtual returns (uint8) {
+        return 6;
     }
 
     function totalSupply() public view returns (uint256) {
@@ -61,7 +62,7 @@ contract ERC20 is Owner, Staking{
         return true;
     }
 
-    function _transfer(address sender, address receiver, uint256 amount) internal {
+    function _transfer(address sender, address receiver, uint256 amount) internal virtual {
         require(balances[sender] >= amount, "transfer amount exceeds sender's balance");
 
         balances[sender] -= amount;
@@ -119,61 +120,4 @@ contract ERC20 is Owner, Staking{
 
         emit Transfer(account, address(0), amount);
     }
-
-    // staking implementation
-
-    modifier ifHaveStake(address account) {
-        require(stakes[account].stake != 0, "account doesn't have a stake");
-        _;
-    }
-
-    function stake(uint256 amount) external override {
-        burn(msg.sender, amount);
-
-        if (stakes[msg.sender].stake == 0) {
-            stakes[msg.sender].stake += amount;
-            stakes[msg.sender].creationTime = getCurrentTime();
-            stakes[msg.sender].lastClaimTime = getCurrentTime();
-        }
-        else {
-            stakes[msg.sender].previousRewards = rewardsOf(msg.sender);
-            stakes[msg.sender].stake += amount;
-        }
-    }
-
-    function claim() public override ifHaveStake(msg.sender) {
-        require(getLastClaimPeriod() >= minRewardPeriod,
-            "current period less than minimum reward period (1 hour)");
-
-        _claim();
-        stakes[msg.sender].lastWithdrawTime = getCurrentTime();
-    }
-
-    function _claim() internal {
-        mint(msg.sender, rewardsOf(msg.sender));
-        updateAfterClaim();
-    }
-
-    function updateAfterClaim() internal {
-        stakes[msg.sender].previousRewards = 0;
-        stakes[msg.sender].lastClaimTime = getCurrentTime();
-    }
-
-    function withdraw() external override ifHaveStake(msg.sender) {
-        require(getLastWithdrawPeriod() >= minWithdrawPeriod,
-            "current period less than minimum withdraw period (1 day)");
-
-        mint(msg.sender, stakes[msg.sender].stake);
-        delete stakes[msg.sender];
-    }
-
-    function claimAndWithdraw(uint256 amount) external override ifHaveStake(msg.sender) {
-        require(stakes[msg.sender].stake > amount, "withdraw amount exceeds stake");
-        require(getLastWithdrawPeriod() >= minWithdrawPeriod,
-            "current period less than minimum withdraw period (1 day)");
-
-        claim();
-        stakes[msg.sender].stake -= amount;
-    }
-
 }

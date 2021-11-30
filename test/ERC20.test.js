@@ -14,7 +14,7 @@ describe("ERC20 token standard", function () {
 
     beforeEach(async function () {
         [owner, user1, user2] = await ethers.getSigners();
-        Token = await ethers.getContractFactory("ERC20");
+        Token = await ethers.getContractFactory("ERC20Token");
         [tokenName, tokenSymbol, initialBalance] = ["ERC20staking", "STK", 1600];
         token = await Token.deploy(tokenName, tokenSymbol, initialBalance);
         await token.deployed();
@@ -136,63 +136,4 @@ describe("ERC20 token standard", function () {
             });
         });
     });
-
-    describe("Staking", function () {
-        describe("stake", function () {
-            it("Should be change balance", async function () {
-                const initialOwnerBalance = await token.balanceOf(owner.address);
-
-                await token.stake(10);
-                let ownerStake = await token.getStakeSummary();
-                await expect(await token.balanceOf(owner.address)).to.equal(initialOwnerBalance-10);
-                await expect(ownerStake[0]).to.equal(10);
-            });
-
-            it("Should change stake for two times", async function () {
-                await token.stake(10);
-                let ownerStake = await token.getStakeSummary();
-                await expect(ownerStake[0]).to.equal(10);
-
-                await token.stake(10);
-                ownerStake = await token.getStakeSummary();
-                await expect(ownerStake[0]).to.equal(20);
-            });
-        });
-
-        describe("Interests", function () {
-            it("Should return appropriate year rewards", async function () {
-                await token.stake(100);
-                await expect(await token.yearRewardsOf(owner.address)).to.equal(15);
-
-                await token.stake(100);
-                await expect(await token.yearRewardsOf(owner.address)).to.equal(32);
-
-                await token.stake(1000);
-                await expect(await token.yearRewardsOf(owner.address)).to.equal(204);
-
-                await token.stake(301);
-                await expect(await token.yearRewardsOf(owner.address)).to.equal(270);
-            });
-        })
-
-        describe("Claim and withdraw", function () {
-            it("Should fail if current period less than minimum claim period", async function () {
-                await token.stake(100);
-
-                await expect(token.claim())
-                    .to.be.revertedWith("current period less than minimum reward period (1 hour)");
-                await expect(token.claimAndWithdraw(1))
-                    .to.be.revertedWith("current period less than minimum reward period (1 hour)");
-            });
-
-            it("Should withdraw if user didn't claim rewards for last hour ", async function () {
-                const initialOwnerBalance = await token.balanceOf(owner.address);
-                await token.stake(100);
-                await token.withdraw();
-
-                await expect(await token.balanceOf(owner.address)).to.equal(initialOwnerBalance);
-            });
-        });
-    });
-
 });
