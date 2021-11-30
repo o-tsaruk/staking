@@ -39,7 +39,7 @@ describe("Staking", function () {
     });
 
     describe("Claim and withdraw", function () {
-        it("Should change withdraw amount, rewards and previous rewards", async function () {
+        it("Should change withdraw amount and rewards", async function () {
             await token.myTokenStake(1000000);
             await network.provider.send("evm_increaseTime", [day]);
             await token.myTokenStake(1000000);
@@ -49,7 +49,6 @@ describe("Staking", function () {
 
             await expect(StakeSummary[2]).to.equal(100000);
             await expect(StakeSummary[3]).to.equal(821);
-            await expect(StakeSummary[4]).to.equal(0);
         });
 
         it("Should give 16% rewards instead of 15% rewards", async function () {
